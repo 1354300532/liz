@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"   
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!-- sqlMap：映射标签
+	namespace：命名空间
+ -->
+<sqlMap namespace="role">
+
+	<!-- 为数据类型起别名 -->
+	<typeAlias alias="userRequest" type="com.jk.entity.book.UserRequest"/>
+	<typeAlias alias="userResponse" type="com.jk.entity.book.UserResponse"/>
+	<typeAlias alias="roleRequest" type="com.jk.entity.book.role.RoleRequest"/>
+	<typeAlias alias="roleResponse" type="com.jk.entity.book.role.RoleResponse"/>
+	<typeAlias alias="menuRequest" type="com.jk.entity.book.menu.MenuRequest"/>
+	<typeAlias alias="menuResponse" type="com.jk.entity.book.menu.MenuResponse"/>
+	
+	
+	<!-- 查询角色总条数 -->
+	<select id="selectRoleCount" parameterClass="roleRequest" resultClass="int">
+		select count(1) from t_roles
+	</select>
+	
+	<!-- 查询角色列表 -->
+	<select id="selectRoleList" parameterClass="roleRequest" resultClass="roleResponse">
+		select u2.* from (
+			select u1.*, rownum as rm from (
+				select t_id as "roleID",
+					t_name as "roleName",
+					t_desc as "roleDesc"
+				from t_roles r
+			) u1
+			where rownum <![CDATA[<=]]> #endPos#
+		) u2
+		where u2.rm >= #startPos#
+	</select>
+	
+	<!-- 查询角色权限列表 -->
+	<select id="selectRoleMenuListJson" parameterClass="menuRequest" resultClass="menuResponse">
+		select m.t_id as "id", 
+			m.t_name as "name", 
+			m.t_url as "url", 
+			m.t_pid as "pid", 
+			m.t_type as "type", 
+			nvl2(m1.t_role_id, 1, 0) as "checked",
+			m.t_parent as "isParent" 
+		from t_menus m
+		left join (select m2.t_role_id, m2.t_menu_id from t_r_m_mid m2 where m2.t_role_id = #roleID#) m1
+		on m.t_id = m1.t_menu_id
+		order by m.t_id
+	</select>
+	
+	<!-- 根据roleID删除角色所有的权限 -->
+	<delete id="deleteAllRoleMenuByRoleID" parameterClass="menuRequest">
+		delete from t_r_m_mid
+		where t_role_id = #roleID#
+	</delete>
+	
+	<!-- 添加角色的权限 -->
+	<insert id="insertRoleMenu">
+		insert into t_r_m_mid
+		(t_id, t_role_id, t_menu_id)
+		values
+		(t_r_m_mid_seq.nextval, #roleID#, #menuID#)
+	</insert>
+	
+</sqlMap>

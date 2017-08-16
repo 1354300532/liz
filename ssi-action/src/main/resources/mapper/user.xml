@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"   
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!-- sqlMap：映射标签
+	namespace：命名空间
+ -->
+<sqlMap namespace="user">
+
+		<!-- 为数据类型起别名 -->
+	<typeAlias alias="userRequest" type="com.jk.entity.book.UserRequest"/>
+	<typeAlias alias="userResponse" type="com.jk.entity.book.UserResponse"/>
+		<typeAlias alias="roleRequest" type="com.jk.entity.book.role.RoleRequest"/>
+	<typeAlias alias="roleResponse" type="com.jk.entity.book.role.RoleResponse"/>
+		<typeAlias alias="menuRequest" type="com.jk.entity.book.menu.MenuRequest"/>
+	<typeAlias alias="menuResponse" type="com.jk.entity.book.menu.MenuResponse"/>
+	
+	
+
+	<select id="login" parameterClass="userRequest" resultClass="userResponse">
+		select USERID as "userID", 
+			USERACCOUNT as "userAccount",
+			USERPWD as "userPwd",
+			loginfailnum as "loginFailNum", 
+			(sysdate - loginfaildate) * 24 * 60 * 60 * 1000 as "loginFailDate"
+			from t_user
+		where USERACCOUNT = #userAccount#
+	</select>
+	
+	<!-- 修改登录失败的次数 -->
+	<update id="updateLoginFailNum" >
+		update t_user
+		set loginfailnum = loginfailnum,
+		loginfaildate = sysdate
+		where USERACCOUNT = #userAccount#
+	</update>
+	
+	<!-- 查询用户角色列表 -->
+	<select id="selectUserRoleListJson" parameterClass="roleRequest" resultClass="roleResponse">
+		select r.t_id as "id", 
+			r.t_name as "name", 
+			NVL2(m1.t_role_id, 1, 0) as "checked" 
+		from t_roles r
+		left join (select m.t_role_id from t_u_r_mid m where m.t_user_id = #bookID#) m1
+		on r.t_id = m1.t_role_id
+		order by r.t_id
+	</select>
+	
+	<!-- 删除用户所有的角色 -->
+	<delete id="deleteAllRolesByUserID">
+		delete from t_u_r_mid
+		where t_user_id = #bookID#
+	</delete>
+	
+	<!-- 添加用户的角色 -->
+	<insert id="insertUserRole">
+		insert into t_u_r_mid
+		(t_id, t_user_id, t_role_id)
+		values
+		(t_u_r_mid_seq.nextval, #bookID#, #roleID#)
+	</insert>
+	
+	<!-- 查询用户总条数 -->
+	<select id="selectUserCount" parameterClass="userRequest" resultClass="int">
+		select count(1) from t_book
+	</select>
+	
+	<!-- 查询主页菜单树列表 -->
+	<select id="selectTreeListJson" parameterClass="menuRequest" resultClass="java.util.HashMap">
+		select m3.t_id as "id",
+		       m3.t_name as "text",
+		       m3.t_url as "href",
+		       m3.t_pid as "pid"
+		from t_menus m3
+		right join (
+		            select distinct t_menu_id from t_r_m_mid m1
+		            right join (select t_role_id from t_u_r_mid where t_user_id = #bookID#) m2
+		            on m1.t_role_id = m2.t_role_id) m4
+		on m3.t_id = m4.t_menu_id 
+		where m3.t_pid = #pid#
+		order by m3.t_id
+	</select>
+</sqlMap>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"   
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!-- sqlMap：映射标签
+	namespace：命名空间
+ -->
+<sqlMap namespace="book">
+
+	<!-- 为类起别名，使用的时候比较方便 -->
+	<typeAlias alias="book" type="com.jk.entity.book.Book"/>
+	
+
+	<!-- 添加书籍 -->
+	<insert id="insertBook" parameterClass="book">
+		insert into t_book
+		(bookID,bookName,bookPhoto)
+		values
+		(BOOK_ID.Nextval,#bookName#,#bookPhoto#)
+	</insert>
+	
+	<!-- 查询书籍列表 -->
+	<select id="selectBookList" resultClass="book">
+		select bookID as bookID, 
+			bookName as bookName,
+			bookPhoto as bookPhoto 
+		from t_book
+	</select>
+
+    <!-- 删除 -->
+	<delete id="deleteBook" parameterClass="java.lang.Integer">
+		 delete from t_book where bookID=#bookID#  
+	</delete>
+	
+	<!-- 修改 -->
+		<update id="updatebook" parameterClass="book">
+		 update t_book   
+        set bookName=#bookName#,
+        	bookPhoto=#bookPhoto#  
+        where bookID=#bookID# 
+		</update>
+	<!-- 回显 -->
+	<select id="querytoUpdateBook"  parameterClass="int"   resultClass="book">  
+		select bookID as bookID, 
+			 bookName as bookName,
+			 bookPhoto as bookPhoto  
+		from t_book where bookID=#bookID#
+	</select>
+</sqlMap>
